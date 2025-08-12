@@ -1,0 +1,53 @@
+@import "tailwindcss";
+
+:root {
+  --background: #4B5563;
+  --foreground: #ededed;
+  --border: #e5e7eb;
+  --muted-foreground: #6b7280;
+  --muted: #f3f4f6;
+  --font-sans: var(--font-raleway);
+  --font-mono: var(--font-geist-mono);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-border: var(--border);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --border: #374151;
+    --muted-foreground: #9ca3af;
+    --muted: #1f2937;
+  }
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-raleway), Arial, Helvetica, sans-serif;
+}
+
+/* Syllabus page custom styles */
+@media (max-width: 768px) {
+  .syllabus-card {
+    padding: 1rem !important;
+  }
+}
+
+.syllabus-card ul {
+  margin-bottom: 0.5rem;
+}
+
+.syllabus-card li {
+  font-size: 1rem;
+  line-height: 1.5;
+}
