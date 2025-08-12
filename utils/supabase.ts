@@ -1,9 +1,4 @@
-import { createClient } from '@supabase/supabase-js'
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!
-const supabaseKey = process.env.SUPABASE_SERVICE_KEY!
-
-export const supabase = createClient(supabaseUrl, supabaseKey)
+import { createClient as createServerSupabaseClient } from './supabase/server'
 
 export interface User {
   id: string
@@ -17,6 +12,7 @@ export interface User {
 }
 
 export async function createUser(userData: Omit<User, 'id' | 'created_at'>): Promise<User | null> {
+  const supabase = createServerSupabaseClient()
   const { data, error } = await supabase
     .from('users')
     .insert([userData])
@@ -32,6 +28,7 @@ export async function createUser(userData: Omit<User, 'id' | 'created_at'>): Pro
 }
 
 export async function getUserByPhone(phone: string): Promise<User | null> {
+  const supabase = createServerSupabaseClient()
   const { data, error } = await supabase
     .from('users')
     .select()
@@ -47,6 +44,7 @@ export async function getUserByPhone(phone: string): Promise<User | null> {
 }
 
 export async function getUserById(id: string): Promise<User | null> {
+  const supabase = createServerSupabaseClient()
   const { data, error } = await supabase
     .from('users')
     .select()
