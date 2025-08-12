@@ -285,20 +285,26 @@ export default function StudyApp() {
   const [successMessage, setSuccessMessage] = useState<string>("");
   const [editMode, setEditMode] = useState<null | { type: 'subject' | 'lesson' | 'pdf', id: string }>(null);
   const [editForm, setEditForm] = useState<any>({});
-  const supabase = createClient();
+  // Create Supabase client after mount to avoid prerender env access
+  const [supabaseClient, setSupabaseClient] = useState<any>(null);
+  useEffect(() => {
+    setSupabaseClient(createClient());
+  }, []);
 
   // Fetch subjects on mount
   useEffect(() => {
+    if (!supabaseClient) return;
     fetchSubjects();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [supabaseClient]);
 
   async function fetchSubjects() {
-    const { data, error } = await supabase.from("subjects").select();
+    const { data, error } = await supabaseClient.from("subjects").select();
     if (!error && data) setSubjects(data as Subject[]);
   }
 
   async function fetchLessons(subjectId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from("lessons")
       .select()
       .eq("subject_id", subjectId)
@@ -307,7 +313,7 @@ export default function StudyApp() {
   }
 
   async function fetchPdfs(lessonId: string) {
-    const { data, error } = await supabase
+    const { data, error } = await supabaseClient
       .from("lesson_pdfs")
       .select()
       .eq("lesson_id", lessonId);
@@ -324,14 +330,14 @@ export default function StudyApp() {
     setExpandedLesson(null);
     setLessons([]);
     setPdfs([]);
-    fetchLessons(subject.id);
+    if (supabaseClient) fetchLessons(subject.id);
   };
 
   // Toggle lesson dropdown
   const toggleLesson = (lessonId: string) => {
     setExpandedLesson((prev) => (prev === lessonId ? null : lessonId));
     setPdfs([]);
-    fetchPdfs(lessonId);
+    if (supabaseClient) fetchPdfs(lessonId);
   };
 
   // Modal form handlers
@@ -345,7 +351,7 @@ export default function StudyApp() {
 
   async function handleAddSubject(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    await supabase.from("subjects").insert({ name: form.subjectName, icon: form.subjectIcon });
+    await supabaseClient.from("subjects").insert({ name: form.subjectName, icon: form.subjectIcon });
     setForm((f) => ({ ...f, subjectName: "", subjectIcon: "" }));
     fetchSubjects();
     setSuccessMessage("Subject added!");
@@ -354,7 +360,7 @@ export default function StudyApp() {
 
   async function handleAddLesson(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    await supabase.from("lessons").insert({
+    await supabaseClient.from("lessons").insert({
       subject_id: form.lessonSubjectId,
       name: form.lessonName,
       position: form.lessonPosition,
@@ -371,13 +377,13 @@ export default function StudyApp() {
     // Upload to Supabase Storage
     const fileExt = form.pdfFile.name.split('.').pop();
     const fileName = `${Date.now()}.${fileExt}`;
-    const { data: uploadData, error: uploadError } = await supabase.storage
+    const { data: uploadData, error: uploadError } = await supabaseClient.storage
       .from("lesson-pdfs")
       .upload(fileName, form.pdfFile);
     if (uploadError) return;
-    const { data: urlData } = supabase.storage.from("lesson-pdfs").getPublicUrl(fileName);
+    const { data: urlData } = supabaseClient.storage.from("lesson-pdfs").getPublicUrl(fileName);
     // Save in DB
-    await supabase.from("lesson_pdfs").insert({
+    await supabaseClient.from("lesson_pdfs").insert({
       lesson_id: form.pdfLessonId,
       pdf_url: urlData.publicUrl,
     });
@@ -404,14 +410,14 @@ export default function StudyApp() {
     e.preventDefault();
     if (!editMode) return;
     if (editMode.type === 'subject') {
-      await supabase.from("subjects").update({
+      await supabaseClient.from("subjects").update({
         name: editForm.name,
         icon: editForm.icon
       }).eq("id", editMode.id);
       fetchSubjects();
       setSuccessMessage("Subject updated!");
     } else if (editMode.type === 'lesson') {
-      await supabase.from("lessons").update({
+      await supabaseClient.from("lessons").update({
         name: editForm.name,
         position: editForm.position,
         subject_id: editForm.subject_id
@@ -424,15 +430,15 @@ export default function StudyApp() {
         // Upload new file
         const fileExt = editForm.pdfFile.name.split('.').pop();
         const fileName = `${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
+        const { error: uploadError } = await supabaseClient.storage
           .from("lesson-pdfs")
           .upload(fileName, editForm.pdfFile);
         if (!uploadError) {
-          const { data: urlData } = supabase.storage.from("lesson-pdfs").getPublicUrl(fileName);
+          const { data: urlData } = supabaseClient.storage.from("lesson-pdfs").getPublicUrl(fileName);
           pdf_url = urlData.publicUrl;
         }
       }
-      await supabase.from("lesson_pdfs").update({
+      await supabaseClient.from("lesson_pdfs").update({
         pdf_url
       }).eq("id", editMode.id);
       fetchPdfs(editForm.lesson_id);
@@ -444,15 +450,15 @@ export default function StudyApp() {
 
   async function handleDelete(type: 'subject' | 'lesson' | 'pdf', id: string, parentId?: string) {
     if (type === 'subject') {
-      await supabase.from("subjects").delete().eq("id", id);
+      await supabaseClient.from("subjects").delete().eq("id", id);
       fetchSubjects();
       setSuccessMessage("Subject deleted!");
     } else if (type === 'lesson') {
-      await supabase.from("lessons").delete().eq("id", id);
+      await supabaseClient.from("lessons").delete().eq("id", id);
       fetchLessons(parentId!);
       setSuccessMessage("Lesson deleted!");
     } else if (type === 'pdf') {
-      await supabase.from("lesson_pdfs").delete().eq("id", id);
+      await supabaseClient.from("lesson_pdfs").delete().eq("id", id);
       fetchPdfs(parentId!);
       setSuccessMessage("PDF deleted!");
     }

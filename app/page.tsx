@@ -89,14 +89,14 @@ export default function Home() {
     }
   }
 
-  const supabase = createClient();
-  // Fix: Move the async call into a useEffect and useState, since 'await' is not allowed at the top level of a component function.
+  // Supabase client must be created only on the client after mount to avoid prerender env access
   const [pdfUrl, setPdfUrl] = useState<string | null>(null);
   const [pdfError, setPdfError] = useState<any>(null);
 
   useEffect(() => {
     const fetchPdfUrl = async () => {
       try {
+        const supabase = createClient();
         const { data, error } = await supabase
           .storage
           .from('pdfs')
