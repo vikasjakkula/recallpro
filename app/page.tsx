@@ -9,6 +9,7 @@ import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/utils/supabase/client';
+import { Analytics } from '@vercel/analytics/react';
 
 const raleway = Raleway({ subsets: ['latin'], weight: ['400', '500', '600', '700', '800'] });
 
